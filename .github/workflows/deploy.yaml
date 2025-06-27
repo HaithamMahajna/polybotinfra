@@ -1,3 +1,9 @@
+name : terraform and k8s 
+on :
+  push:
+    branches:
+      - feature/k8s_infra
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

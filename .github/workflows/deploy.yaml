@@ -33,7 +33,7 @@ jobs:
             terraform workspace new us-east-1
           fi
           terraform workspace select us-east-1
-          terraform apply -var-file region.us-east-1.tfvars
+          terraform apply -var-file region.us-east-1.tfvars -auto-approve
 
       - name: Get public IP from Terraform output
         id: tf_output

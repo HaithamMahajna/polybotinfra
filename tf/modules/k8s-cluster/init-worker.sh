@@ -86,4 +86,5 @@ fi
 
 # === Join the cluster ===
 echo "[INFO] Joining the Kubernetes cluster..."
-eval "$JOIN_CMD"
+eval "sudo $JOIN_CMD"
+

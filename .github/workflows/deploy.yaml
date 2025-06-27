@@ -41,7 +41,7 @@ jobs:
           cd tf/modules/k8s-cluster
           ip=$(terraform output -raw instance_public_ip)
           echo "ip=$ip" >> $GITHUB_OUTPUT
-          echo "Got IP: $ip"
+          echo "The IP is ${{ steps.tf_output.outputs.ip }}"
       - name: SSH into EC2 and deploy token refresh system
         run: |
           mkdir -p ~/.ssh

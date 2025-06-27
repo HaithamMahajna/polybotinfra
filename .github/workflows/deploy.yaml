@@ -45,6 +45,7 @@ jobs:
       
       - name: SSH into EC2 and deploy token refresh system
         run: |
+          echo "Public IP is: ${{ steps.tf_output.outputs.ip }}"
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/private_key
           chmod 600 ~/.ssh/private_key

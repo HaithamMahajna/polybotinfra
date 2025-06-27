@@ -28,6 +28,12 @@ jobs:
           cd tf/modules/k8s-cluster
           terraform init
           terraform workspace new us-eas-1
+          if terraform workspace list | grep -qw "us-east-1"; then
+            echo "workspace exist"
+          else 
+            terraform workspace new us-east-1
+          fi
+          terraform workspace select us-east-1
           terraform apply -var-file region.us-east-1.tfvars
 
       - name: Get public IP from Terraform output

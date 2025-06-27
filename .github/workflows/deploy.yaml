@@ -1,0 +1,81 @@
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_ssh_key_name: my-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init & Apply
+        run: |
+          cd tf/modules/k8s-cluster
+          terraform init
+          terraform workspace new us-eas-1
+          terraform apply -var-file region.us-east-1.tfvars
+
+      - name: Get public IP from Terraform output
+        id: tf_output
+        run: |
+          cd tf/modules/k8s-cluster
+          echo "ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_OUTPUT
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: SSH into EC2 and deploy token refresh system
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/private_key
+          chmod 600 ~/.ssh/private_key
+          # Copy the systemd unit files and the token script to home directory
+          scp -i ~/.ssh/private_key -o StrictHostKeyChecking=no \
+          kubeadm-token.service kubeadm-token.timer refresh-token.sh \
+          ubuntu@${{ steps.tf_output.outputs.ip }}:/home/ubuntu/
+          # SSH in and move the files into place with sudo
+          ssh -i ~/.ssh/private_key -o StrictHostKeyChecking=no ubuntu@${{ steps.tf_output.outputs.ip }} << 'EOF'
+          if [ ! -f /etc/kubernetes/admin.conf ]; then
+            sudo kubeadm init 
+          fi
+
+          if [ ! -f "/home/ubuntu/.kube/config" ]; then
+          mkdir -p /home/ubuntu/.kube
+          sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config 2>/dev/null || true
+          sudo chown $(id -u):$(id -g) /home/ubuntu/.kube/config
+          fi
+
+          if ! kubectl get daemonset calico-node -n kube-system &> /dev/null; then
+          kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml
+          fi
+
+          sudo mv /home/ubuntu/kubeadm-token.* /etc/systemd/system/
+          sudo mv /home/ubuntu/refresh-token.sh /usr/local/bin/refresh-token.sh
+          sudo chmod +x /usr/local/bin/refresh-token.sh
+          sudo systemctl daemon-reexec
+          sudo systemctl daemon-reload
+          sudo systemctl enable --now kubeadm-token.timer
+          # Generate join command
+          JOIN_CMD=$(sudo kubeadm token create --print-join-command)
+          aws secretsmanager create-secret \
+            --name kubeadm-join-command \
+            --secret-string "$JOIN_CMD" \
+            --region us-east-1 \
+            || aws secretsmanager update-secret \
+            --secret-id kubeadm-join-command \
+            --secret-string "$JOIN_CMD" \
+            --region us-east-1
+          EOF
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+
+
+
+

@@ -1,0 +1,6 @@
+[Unit]
+Description=Refresh kubeadm token and update AWS Secret
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/refresh-token.sh

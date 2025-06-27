@@ -39,7 +39,7 @@ jobs:
         id: tf_output
         run: |
           cd tf/modules/k8s-cluster
-          ip=$(terraform output -raw instance_public_ip 2>/dev/null || echo "")
+          ip=$(terraform output -raw instance_public_ip 2>/dev/null | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
           echo "::notice::Got public IP: $ip"
           echo "ip=$ip" >> "$GITHUB_OUTPUT"
       

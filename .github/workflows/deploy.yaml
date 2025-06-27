@@ -27,7 +27,6 @@ jobs:
         run: |
           cd tf/modules/k8s-cluster
           terraform init
-          terraform workspace new us-eas-1
           if terraform workspace list | grep -qw "us-east-1"; then
             echo "workspace exist"
           else 

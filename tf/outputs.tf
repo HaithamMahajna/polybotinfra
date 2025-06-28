@@ -7,7 +7,7 @@ output "public_subnets" {
 }
 output "instance_public_ip" {
   description = "Public IP of the control plane EC2 instance"
-  value       = module.k8s-cluster.instance_private_ip
+  value       = module.k8s-cluster.instance_public_ip
 }
 
 output "instance_private_ip" {

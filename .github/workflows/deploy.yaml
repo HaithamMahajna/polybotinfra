@@ -1,11 +1,12 @@
-# .github/workflows/deploy-dev.yaml
-name: Polybot Deploy Dev
+# .github/workflows/deploy.yaml
+name: deploy
 
 on:
   workflow_call:
     inputs:
       ip:
         required: true
+    secrets:
       SSH_PRIVATE_KEY:
         required: true
 
@@ -14,6 +15,7 @@ on:
       ip:
         required: true
         type: string
+
 
 
 jobs:
@@ -68,6 +70,6 @@ jobs:
             EOF
           env:
             SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-            ip : {{ inputs.ip }}
+            ip : ${{ inputs.ip }
 
 

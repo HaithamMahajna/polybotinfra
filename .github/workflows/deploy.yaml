@@ -4,6 +4,7 @@ on:
     inputs:
       ip:
         required: true
+        type: string
     secrets:
       SSH_PRIVATE_KEY:
         required: true

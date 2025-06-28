@@ -9,7 +9,7 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     outputs:
-      ip: ${{ steps.tf_output.outputs.ip }
+      ip: ${{ steps.tf_output.outputs.ip }}
     env:
       TF_VAR_ssh_key_name: my-key
     steps:

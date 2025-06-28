@@ -24,7 +24,7 @@ jobs:
         - uses: actions/checkout@v4
         - name: SSH into EC2 and deploy token refresh system
           run: |
-            echo "Public IP is: $ip"
+            echo "Public IP is: ${{ inputs.ip }}"
             mkdir -p ~/.ssh
             echo "$SSH_PRIVATE_KEY" > ~/.ssh/private_key
             chmod 600 ~/.ssh/private_key
@@ -67,6 +67,6 @@ jobs:
             EOF
           env:
             SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-            ip : ${{ inputs.ip }}
+            ip: ${{ inputs.ip }}
 
 

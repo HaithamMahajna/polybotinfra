@@ -1,5 +1,3 @@
-# .github/workflows/deploy.yaml
-name: deploy
 
 on:
   workflow_call:
@@ -70,6 +68,6 @@ jobs:
             EOF
           env:
             SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-            ip : ${{ inputs.ip }
+            ip : ${{ inputs.ip }}
 
 

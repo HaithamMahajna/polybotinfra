@@ -45,13 +45,13 @@ jobs:
           echo "ip=$ip" >> "$GITHUB_OUTPUT" 
       
 
-Deploy:
-    needs: terraform 
-    uses: ./.github/workflows/terraform.yaml
-    with:
+  Deploy:
+      needs: terraform 
+      uses: ./.github/workflows/terraform.yaml
+      with:
       ip: ${{ needs.terraform.outputs.ip }}
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      secrets:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
 
 

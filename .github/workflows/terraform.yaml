@@ -46,12 +46,12 @@ jobs:
       
 
   Deploy:
-      needs: terraform 
-      uses: ./.github/workflows/terraform.yaml
-      with:
+    needs: terraform 
+    uses: ./.github/workflows/terraform.yaml
+    with:
       ip: ${{ needs.terraform.outputs.ip }}
-      secrets:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
 
 

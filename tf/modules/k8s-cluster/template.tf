@@ -14,6 +14,17 @@ resource "aws_launch_template" "worker_lt" {
     security_groups             = [aws_security_group.worker_sg.id]
   }
 
+  block_device_mappings {
+    device_name = "/dev/sda1" 
+    ebs {
+      volume_size = 25
+      volume_type = "gp3"           
+      delete_on_termination = true
+    }
+  }
+
+
+
   tag_specifications {
     resource_type = "instance"
     tags = {

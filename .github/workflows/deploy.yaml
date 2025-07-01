@@ -34,7 +34,7 @@ jobs:
             ubuntu@$ip:/home/ubuntu/
             # SSH in and move the files into place with sudo
             ssh -i ~/.ssh/private_key -o StrictHostKeyChecking=no ubuntu@$ip << 'EOF'
-            sleep (30)
+            sleep 30
             if [ ! -f /etc/kubernetes/admin.conf ]; then
               sudo kubeadm init 
             fi

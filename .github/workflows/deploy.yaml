@@ -1,0 +1,73 @@
+
+on:
+  workflow_call:
+    inputs:
+      ip:
+        required: true
+        type: string
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      ip:
+        required: true
+        type: string
+
+
+
+jobs:
+    Deploy:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: SSH into EC2 and deploy token refresh system
+          run: |
+            echo "Public IP is: ${{ inputs.ip }}"
+            mkdir -p ~/.ssh
+            echo "$SSH_PRIVATE_KEY" > ~/.ssh/private_key
+            chmod 600 ~/.ssh/private_key
+            # Copy the systemd unit files and the token script to home directory
+            scp -i ~/.ssh/private_key -o StrictHostKeyChecking=no \
+            kubeadm-token.service kubeadm-token.timer refresh-token.sh \
+            ubuntu@$ip:/home/ubuntu/
+            # SSH in and move the files into place with sudo
+            ssh -i ~/.ssh/private_key -o StrictHostKeyChecking=no ubuntu@$ip << 'EOF'
+            sleep 30
+            if [ ! -f /etc/kubernetes/admin.conf ]; then
+              sudo kubeadm init 
+            fi
+
+            if [ ! -f "/home/ubuntu/.kube/config" ]; then
+            mkdir -p /home/ubuntu/.kube
+            sudo cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config 2>/dev/null || true
+            sudo chown $(id -u):$(id -g) /home/ubuntu/.kube/config
+            fi
+
+            if ! kubectl get daemonset calico-node -n kube-system &> /dev/null; then
+            kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml
+            fi
+
+            sudo mv /home/ubuntu/kubeadm-token.* /etc/systemd/system/
+            sudo mv /home/ubuntu/refresh-token.sh /usr/local/bin/refresh-token.sh
+            sudo chmod +x /usr/local/bin/refresh-token.sh
+            sudo systemctl daemon-reexec
+            sudo systemctl daemon-reload
+            sudo systemctl enable --now kubeadm-token.timer
+            # Generate join command
+            JOIN_CMD=$(sudo kubeadm token create --print-join-command)
+            aws secretsmanager create-secret \
+              --name kubeadm-join-command \
+              --secret-string "$JOIN_CMD" \
+              --region us-east-1 \
+              || aws secretsmanager update-secret \
+              --secret-id kubeadm-join-command \
+              --secret-string "$JOIN_CMD" \
+              --region us-east-1
+            EOF
+          env:
+            SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            ip: ${{ inputs.ip }}
+
+

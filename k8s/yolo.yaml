@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: yolo-dev
+  name: yolo-dev
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo-dev
+  template:
+    metadata:
+      labels:
+        app: yolo-dev
+    spec:
+      containers:
+      - env:
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: BUCKET_ID
+              name: my-secrets-dev
+        - name: POLYBOT_URL
+          value: polybot-dev
+        image: haithammahajna/yolo-dev:26
+        name: yolo-container
+        resources:
+          limits:
+            cpu: 250m
+          requests:
+            cpu: 250m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-dev
+  namespace: dev
+  labels:
+    monitoring: "true"
+spec:
+  selector:
+    app: yolo-dev
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yolo-service-monitor
+  namespace: monitoring
+  labels:
+    release: monitoring-stack
+spec:
+  selector:
+    matchLabels:
+      monitoring: "true"
+  namespaceSelector:
+    matchNames:
+      - dev
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yolo-dev
+  namespace: dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yolo-dev
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
